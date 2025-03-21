@@ -1,3 +1,4 @@
+
 import { toast } from 'sonner';
 
 const API_BASE_URL = 'https://n8n-main-instance-production-1345.up.railway.app/webhook';
@@ -39,17 +40,37 @@ interface UserSubmissionPayload {
   users: User[];
 }
 
+// Longer timeout for API calls (30 seconds)
+const API_TIMEOUT = 30000;
+
+// Helper function to create a promise that rejects after a timeout
+const timeoutPromise = (ms: number) => {
+  return new Promise((_, reject) => {
+    setTimeout(() => reject(new Error(`Request timed out after ${ms}ms`)), ms);
+  });
+};
+
 export const fetchFormData = async (formToken: string): Promise<PageLoadResponse> => {
   try {
     console.log('Fetching form data with token:', formToken);
-    const response = await fetch(`${API_BASE_URL}/pageload`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({ formToken }),
-    });
+    
+    if (!formToken) {
+      console.warn('fetchFormData called with empty token');
+      return {};
+    }
+    
+    // Race the fetch against a timeout
+    const response = await Promise.race([
+      fetch(`${API_BASE_URL}/pageload`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ formToken }),
+      }),
+      timeoutPromise(API_TIMEOUT)
+    ]) as Response;
 
     console.log('API Response status:', response.status);
     
@@ -62,23 +83,31 @@ export const fetchFormData = async (formToken: string): Promise<PageLoadResponse
     return data;
   } catch (error) {
     console.error('Error fetching form data:', error);
-    toast.error('Failed to load form data. Please refresh and try again.');
+    if ((error as Error).message.includes('timed out')) {
+      toast.error('API request timed out. The server might be busy. Please try again.');
+    } else {
+      toast.error('Failed to load form data. Please refresh and try again.');
+    }
     return {};
   }
 };
 
 export const verifyApiKeys = async (openRouterApiKey: string, fluxApiKey: string): Promise<KeyVerificationResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/keyveriffy`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        openRouterApiKey,
-        fluxApiKey,
+    const response = await Promise.race([
+      fetch(`${API_BASE_URL}/keyveriffy`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          openRouterApiKey,
+          fluxApiKey,
+        }),
       }),
-    });
+      timeoutPromise(API_TIMEOUT)
+    ]) as Response;
 
     if (!response.ok) {
       throw new Error(`API call failed: ${response.status}`);
@@ -87,20 +116,28 @@ export const verifyApiKeys = async (openRouterApiKey: string, fluxApiKey: string
     return await response.json();
   } catch (error) {
     console.error('Error verifying API keys:', error);
-    toast.error('Failed to verify API keys. Please try again.');
+    if ((error as Error).message.includes('timed out')) {
+      toast.error('API key verification timed out. The server might be busy. Please try again.');
+    } else {
+      toast.error('Failed to verify API keys. Please try again.');
+    }
     return { openRouterPass: 'fail', fluxPass: 'fail' };
   }
 };
 
 export const submitApiKeyForm = async (payload: ApiKeySubmissionPayload): Promise<void> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/submitanswers`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
+    const response = await Promise.race([
+      fetch(`${API_BASE_URL}/submitanswers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload),
+      }),
+      timeoutPromise(API_TIMEOUT)
+    ]) as Response;
 
     if (!response.ok) {
       throw new Error(`API call failed: ${response.status}`);
@@ -113,19 +150,27 @@ export const submitApiKeyForm = async (payload: ApiKeySubmissionPayload): Promis
     }
   } catch (error) {
     console.error('Error submitting form:', error);
-    toast.error('Failed to submit form. Please try again.');
+    if ((error as Error).message.includes('timed out')) {
+      toast.error('Form submission timed out. The server might be busy. Please try again.');
+    } else {
+      toast.error('Failed to submit form. Please try again.');
+    }
   }
 };
 
 export const submitUserInvitations = async (payload: UserSubmissionPayload): Promise<void> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/submitusers`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
+    const response = await Promise.race([
+      fetch(`${API_BASE_URL}/submitusers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload),
+      }),
+      timeoutPromise(API_TIMEOUT)
+    ]) as Response;
 
     if (!response.ok) {
       throw new Error(`API call failed: ${response.status}`);
@@ -135,6 +180,10 @@ export const submitUserInvitations = async (payload: UserSubmissionPayload): Pro
     toast.success('Users invited successfully!');
   } catch (error) {
     console.error('Error inviting users:', error);
-    toast.error('Failed to invite users. Please try again.');
+    if ((error as Error).message.includes('timed out')) {
+      toast.error('User invitation submission timed out. The server might be busy. Please try again.');
+    } else {
+      toast.error('Failed to invite users. Please try again.');
+    }
   }
 };

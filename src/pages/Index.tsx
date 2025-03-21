@@ -26,14 +26,24 @@ const Index = () => {
   
   useEffect(() => {
     const loadFormData = async () => {
-      if (!formToken) {
-        setError('No form token provided. Please check the URL.');
-        setIsLoading(false);
-        return;
-      }
-      
       try {
         console.log('Calling fetchFormData with token:', formToken);
+        
+        // Only show the no token error if there's actually no token after a short delay
+        // This gives time for the URL params to be properly extracted
+        if (!formToken) {
+          const tokenCheckTimeout = setTimeout(() => {
+            const currentParams = new URLSearchParams(window.location.search);
+            const currentToken = currentParams.get('formToken');
+            
+            if (!currentToken) {
+              setError('No form token provided. Please check the URL.');
+            }
+          }, 500);
+          
+          return () => clearTimeout(tokenCheckTimeout);
+        }
+        
         const data = await fetchFormData(formToken);
         console.log('Data received in component:', data);
         
@@ -46,6 +56,9 @@ const Index = () => {
         if (data.submitted) {
           setIsApiKeyFormCompleted(true);
         }
+        
+        // Clear any previous errors since we got data successfully
+        setError(null);
       } catch (error) {
         console.error('Error loading form data:', error);
         setError('Failed to load form data. Please refresh and try again.');
@@ -66,23 +79,14 @@ const Index = () => {
     }, 500);
   };
   
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <img src="https://i.imgur.com/qxrKGVh.png" alt="Logo" className="h-16 mb-8" />
-        <LoadingSpinner size="lg" />
-        <p className="text-zinc-300 mt-6 animate-pulse">Loading form data... (Token: {formToken})</p>
-      </div>
-    );
-  }
-  
   // Debug panel to display the raw API response
   const DebugPanel = () => (
     <div className="my-8 p-4 bg-zinc-800 rounded-md">
       <h3 className="text-xl font-semibold text-white mb-2">Debug Information</h3>
-      <div className="flex space-x-4 mb-2">
+      <div className="flex flex-wrap gap-4 mb-2">
         <div className="text-green-400">Form Token: {formToken || 'None'}</div>
         <div className="text-yellow-400">Form Data Received: {formData ? 'Yes' : 'No'}</div>
+        <div className="text-blue-400">Loading: {isLoading ? 'Yes' : 'No'}</div>
       </div>
       <div className="bg-zinc-900 p-3 rounded overflow-auto max-h-60">
         <pre className="text-xs text-zinc-300">{apiRawResponse || 'No data received'}</pre>
@@ -90,7 +94,18 @@ const Index = () => {
     </div>
   );
   
-  if (error) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <img src="https://i.imgur.com/qxrKGVh.png" alt="Logo" className="h-16 mb-8" />
+        <LoadingSpinner size="lg" />
+        <p className="text-zinc-300 mt-6 animate-pulse">Loading form data... (Token: {formToken})</p>
+        <DebugPanel />
+      </div>
+    );
+  }
+  
+  if (error && !formData) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
         <img src="https://i.imgur.com/qxrKGVh.png" alt="Logo" className="h-16 mb-8" />
@@ -131,12 +146,14 @@ const Index = () => {
           )}
           
           <div ref={userFormRef} className={`form-container transition-opacity duration-500 ${(!isApiKeyFormCompleted && !formData?.submitted) ? 'opacity-50' : 'opacity-100'}`}>
-            <UserInvitationForm
-              formToken={formToken}
-              availableUsers={formData?.availableUsers}
-              activeUsers={formData?.activeUsers}
-              existingEmails={formData?.emails}
-            />
+            {formData && (
+              <UserInvitationForm
+                formToken={formToken}
+                availableUsers={formData.availableUsers}
+                activeUsers={formData.activeUsers}
+                existingEmails={formData.emails}
+              />
+            )}
           </div>
           
           <div className="text-center text-xs text-zinc-500 py-8">
