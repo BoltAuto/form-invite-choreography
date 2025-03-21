@@ -26,11 +26,15 @@ const UserInvitationForm: React.FC<UserInvitationFormProps> = ({
   const [existingUsers, setExistingUsers] = useState<UserData[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [localAvailableUsers, setLocalAvailableUsers] = useState(availableUsers);
+  const [localActiveUsers, setLocalActiveUsers] = useState(activeUsers);
 
   useEffect(() => {
     // Initialize form with empty fields based on available users
     const initialUsers = Array(availableUsers).fill(null).map(() => ({ name: '', email: '' }));
     setUsers(initialUsers);
+    setLocalAvailableUsers(availableUsers);
+    setLocalActiveUsers(activeUsers);
     
     // Parse existing emails if any
     if (existingEmails) {
@@ -49,7 +53,7 @@ const UserInvitationForm: React.FC<UserInvitationFormProps> = ({
         setExistingUsers(emailsArray.filter(user => user.email));
       }
     }
-  }, [availableUsers, existingEmails]);
+  }, [availableUsers, activeUsers, existingEmails]);
 
   const handleUserChange = (index: number, field: keyof UserData, value: string) => {
     const updatedUsers = [...users];
@@ -75,15 +79,20 @@ const UserInvitationForm: React.FC<UserInvitationFormProps> = ({
         users: validUsers
       });
       
-      setSuccessMessage('Users invited successfully!');
+      // Update local counts
+      const invitedCount = validUsers.length;
+      setLocalAvailableUsers(prev => Math.max(0, prev - invitedCount));
+      setLocalActiveUsers(prev => prev + invitedCount);
       
-      // Reset form after successful submission
-      const remainingSlots = Math.max(0, availableUsers - validUsers.length);
-      const newUsers = Array(remainingSlots).fill(null).map(() => ({ name: '', email: '' }));
-      setUsers(newUsers);
+      setSuccessMessage('Users submitted! Invites will arrive shortly!');
       
       // Add newly invited users to existing users
       setExistingUsers(prev => [...prev, ...validUsers]);
+      
+      // Reset form after successful submission - only show fields up to available slots
+      const remainingSlots = Math.max(0, localAvailableUsers - invitedCount);
+      const newUsers = Array(remainingSlots).fill(null).map(() => ({ name: '', email: '' }));
+      setUsers(newUsers);
     } catch (error) {
       console.error('Error inviting users:', error);
     } finally {
@@ -111,12 +120,12 @@ const UserInvitationForm: React.FC<UserInvitationFormProps> = ({
       
       <div className="flex justify-center items-center mb-6 space-x-6">
         <div className="text-center">
-          <div className="text-3xl font-bold text-brand">{activeUsers}</div>
+          <div className="text-3xl font-bold text-brand">{localActiveUsers}</div>
           <div className="text-sm text-zinc-400">Active Users</div>
         </div>
         <div className="h-10 border-r border-zinc-600"></div>
         <div className="text-center">
-          <div className="text-3xl font-bold text-brand">{availableUsers}</div>
+          <div className="text-3xl font-bold text-brand">{localAvailableUsers}</div>
           <div className="text-sm text-zinc-400">Available Slots</div>
         </div>
       </div>
@@ -143,14 +152,14 @@ const UserInvitationForm: React.FC<UserInvitationFormProps> = ({
         </div>
       )}
       
-      {availableUsers > 0 && (
+      {localAvailableUsers > 0 && (
         <>
           <div className="text-zinc-300 mb-6 text-center">
             Please enter the names and email addresses of the users you'd like to invite.
           </div>
           
           <form onSubmit={handleSubmit} className="space-y-6">
-            {users.map((user, index) => (
+            {users.slice(0, localAvailableUsers).map((user, index) => (
               <div 
                 key={index} 
                 className="space-y-3 p-4 border border-zinc-700 rounded-lg bg-[#333333]/50 animate-fade-in"
@@ -205,7 +214,7 @@ const UserInvitationForm: React.FC<UserInvitationFormProps> = ({
               </div>
             ))}
             
-            {users.length < availableUsers && (
+            {users.length < localAvailableUsers && (
               <button
                 type="button"
                 onClick={() => setUsers([...users, { name: '', email: '' }])}

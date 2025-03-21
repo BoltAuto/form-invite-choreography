@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { verifyApiKeys, submitApiKeyForm } from '../services/api';
 import LoadingSpinner from './LoadingSpinner';
-import { Check, X } from 'lucide-react';
+import { Check, X, Eye, EyeOff } from 'lucide-react';
 
 interface ApiKeyFormProps {
   formToken: string;
@@ -29,14 +29,16 @@ const ApiKeyForm: React.FC<ApiKeyFormProps> = ({
   const [formData, setFormData] = useState<FormData>({
     firstName: name,
     companyName: '',
-    slackEmail: paymentEmail,
-    usePaymentEmail: !!paymentEmail,
+    slackEmail: paymentEmail || '',
+    usePaymentEmail: true, // Set to true by default
     openRouterApiKey: '',
     fluxApiKey: ''
   });
 
   const [isVerifying, setIsVerifying] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showOpenRouterKey, setShowOpenRouterKey] = useState(false);
+  const [showFluxKey, setShowFluxKey] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState<{
     openRouter: 'idle' | 'pass' | 'fail';
     flux: 'idle' | 'pass' | 'fail';
@@ -91,6 +93,19 @@ const ApiKeyForm: React.FC<ApiKeyFormProps> = ({
   const handleSubmit = async (keysPassed: boolean) => {
     setIsSubmitting(true);
     
+    // Smart payload logic for email
+    let slackEmailToUse = formData.slackEmail;
+    
+    // If usePaymentEmail is true, use paymentEmail
+    if (formData.usePaymentEmail && paymentEmail) {
+      slackEmailToUse = paymentEmail;
+    }
+    
+    // If still empty and we have a payment email, use that
+    if (!slackEmailToUse && paymentEmail) {
+      slackEmailToUse = paymentEmail;
+    }
+    
     try {
       await submitApiKeyForm({
         answers: {
@@ -101,7 +116,7 @@ const ApiKeyForm: React.FC<ApiKeyFormProps> = ({
           apikeyspassed: keysPassed,
           slackEmailIsFine: formData.usePaymentEmail,
           formToken: formToken,
-          prefered_email_addressSlack: formData.slackEmail
+          prefered_email_addressSlack: slackEmailToUse
         }
       });
       
@@ -113,6 +128,11 @@ const ApiKeyForm: React.FC<ApiKeyFormProps> = ({
       console.error('Submit error:', error);
       setIsSubmitting(false);
     }
+  };
+
+  const maskApiKey = (key: string, show: boolean) => {
+    if (!key) return '';
+    return show ? key : '•'.repeat(Math.min(key.length, 20));
   };
 
   return (
@@ -203,19 +223,36 @@ const ApiKeyForm: React.FC<ApiKeyFormProps> = ({
                 </span>
               )}
             </label>
-            <input
-              id="openRouterApiKey"
-              name="openRouterApiKey"
-              type="text"
-              value={formData.openRouterApiKey}
-              onChange={handleInputChange}
-              required
-              className={`input-field w-full ${
-                verificationStatus.openRouter === 'pass' ? 'ring-2 ring-green-500' :
-                verificationStatus.openRouter === 'fail' ? 'ring-2 ring-red-500' : ''
-              }`}
-              placeholder="sk-or-..."
-            />
+            <div className="relative">
+              <input
+                id="openRouterApiKey"
+                name="openRouterApiKey"
+                type="text"
+                value={formData.openRouterApiKey}
+                onChange={handleInputChange}
+                required
+                className={`input-field w-full pr-10 ${
+                  verificationStatus.openRouter === 'pass' ? 'ring-2 ring-green-500' :
+                  verificationStatus.openRouter === 'fail' ? 'ring-2 ring-red-500' : ''
+                }`}
+                placeholder="sk-or-..."
+              />
+              <div 
+                className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
+                onClick={() => setShowOpenRouterKey(!showOpenRouterKey)}
+              >
+                {showOpenRouterKey ? (
+                  <EyeOff size={18} className="text-zinc-400 hover:text-zinc-300" />
+                ) : (
+                  <Eye size={18} className="text-zinc-400 hover:text-zinc-300" />
+                )}
+              </div>
+              <div className="absolute inset-0 pointer-events-none pl-4 flex items-center">
+                <span className={`${formData.openRouterApiKey ? '' : 'hidden'} text-white`}>
+                  {maskApiKey(formData.openRouterApiKey, showOpenRouterKey)}
+                </span>
+              </div>
+            </div>
             {verificationStatus.openRouter === 'fail' && (
               <p className="text-red-500 text-sm mt-1">Invalid OpenRouter API key</p>
             )}
@@ -234,19 +271,36 @@ const ApiKeyForm: React.FC<ApiKeyFormProps> = ({
                 </span>
               )}
             </label>
-            <input
-              id="fluxApiKey"
-              name="fluxApiKey"
-              type="text"
-              value={formData.fluxApiKey}
-              onChange={handleInputChange}
-              required
-              className={`input-field w-full ${
-                verificationStatus.flux === 'pass' ? 'ring-2 ring-green-500' :
-                verificationStatus.flux === 'fail' ? 'ring-2 ring-red-500' : ''
-              }`}
-              placeholder="Enter your BFL API key"
-            />
+            <div className="relative">
+              <input
+                id="fluxApiKey"
+                name="fluxApiKey"
+                type="text" 
+                value={formData.fluxApiKey}
+                onChange={handleInputChange}
+                required
+                className={`input-field w-full pr-10 ${
+                  verificationStatus.flux === 'pass' ? 'ring-2 ring-green-500' :
+                  verificationStatus.flux === 'fail' ? 'ring-2 ring-red-500' : ''
+                }`}
+                placeholder="Enter your BFL API key"
+              />
+              <div 
+                className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
+                onClick={() => setShowFluxKey(!showFluxKey)}
+              >
+                {showFluxKey ? (
+                  <EyeOff size={18} className="text-zinc-400 hover:text-zinc-300" />
+                ) : (
+                  <Eye size={18} className="text-zinc-400 hover:text-zinc-300" />
+                )}
+              </div>
+              <div className="absolute inset-0 pointer-events-none pl-4 flex items-center">
+                <span className={`${formData.fluxApiKey ? '' : 'hidden'} text-white`}>
+                  {maskApiKey(formData.fluxApiKey, showFluxKey)}
+                </span>
+              </div>
+            </div>
             {verificationStatus.flux === 'fail' && (
               <p className="text-red-500 text-sm mt-1">Invalid Black Forest Labs API key</p>
             )}

@@ -97,7 +97,7 @@ const Index = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <img src="https://i.imgur.com/qxrKGVh.png" alt="Logo" className="h-16 mb-8" />
+        <img src="https://i.imgur.com/S57GRla.png" alt="Logo" className="h-32 mb-8" />
         <LoadingSpinner size="lg" />
         <p className="text-zinc-300 mt-6 animate-pulse">Loading form data... (Token: {formToken})</p>
         <DebugPanel />
@@ -108,7 +108,7 @@ const Index = () => {
   if (error && !formData) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <img src="https://i.imgur.com/qxrKGVh.png" alt="Logo" className="h-16 mb-8" />
+        <img src="https://i.imgur.com/S57GRla.png" alt="Logo" className="h-32 mb-8" />
         <div className="glass-card p-8 max-w-md text-center">
           <h2 className="text-2xl font-semibold mb-4 text-white">Error</h2>
           <p className="text-zinc-300">{error}</p>
@@ -122,7 +122,7 @@ const Index = () => {
     <div className="min-h-screen p-4 sm:p-6 md:p-8">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
-          <img src="https://i.imgur.com/qxrKGVh.png" alt="Logo" className="h-16 mx-auto mb-8" />
+          <img src="https://i.imgur.com/S57GRla.png" alt="Logo" className="h-32 mx-auto mb-8" />
           <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2 tracking-tight">Welcome to the API Integration Form</h1>
           {formData?.name && (
             <p className="text-lg text-zinc-300">
