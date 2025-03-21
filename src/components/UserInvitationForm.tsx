@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { submitUserInvitations } from '../services/api';
 import LoadingSpinner from './LoadingSpinner';
-import { UserPlus, X } from 'lucide-react';
+import { UserPlus, X, Mail } from 'lucide-react';
 
 interface UserInvitationFormProps {
   formToken: string;
@@ -107,7 +107,7 @@ const UserInvitationForm: React.FC<UserInvitationFormProps> = ({
           <UserPlus size={48} className="mx-auto mb-4 text-zinc-400" />
           <h2 className="text-2xl font-semibold mb-2 text-white">No User Slots Available</h2>
           <p className="text-zinc-300">
-            You don't have any available slots to invite users at this time.
+            Need more user slots? Please contact Revenue Aigency at <a href="mailto:ruben@revenueaigency.com" className="text-brand hover:underline">ruben@revenueaigency.com</a>
           </p>
         </div>
       </div>
@@ -191,7 +191,7 @@ const UserInvitationForm: React.FC<UserInvitationFormProps> = ({
                     type="text"
                     value={user.name}
                     onChange={(e) => handleUserChange(index, 'name', e.target.value)}
-                    required
+                    required={index === 0}
                     className="input-field w-full"
                     placeholder="John Doe"
                   />
@@ -206,7 +206,7 @@ const UserInvitationForm: React.FC<UserInvitationFormProps> = ({
                     type="email"
                     value={user.email}
                     onChange={(e) => handleUserChange(index, 'email', e.target.value)}
-                    required
+                    required={index === 0}
                     className="input-field w-full"
                     placeholder="john@example.com"
                   />
@@ -227,7 +227,7 @@ const UserInvitationForm: React.FC<UserInvitationFormProps> = ({
             <div className="flex justify-center pt-4">
               <button
                 type="submit"
-                disabled={isSubmitting || users.every(user => !user.name && !user.email)}
+                disabled={isSubmitting || users.length === 0 || (users[0].name === '' && users[0].email === '')}
                 className="btn-primary w-full sm:w-auto flex items-center justify-center"
               >
                 {isSubmitting ? (

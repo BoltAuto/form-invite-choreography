@@ -21,7 +21,6 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isApiKeyFormCompleted, setIsApiKeyFormCompleted] = useState(false);
-  const [apiRawResponse, setApiRawResponse] = useState<string>("");
   const userFormRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
@@ -47,18 +46,20 @@ const Index = () => {
         const data = await fetchFormData(formToken);
         console.log('Data received in component:', data);
         
-        // Store raw response for debugging
-        setApiRawResponse(JSON.stringify(data, null, 2));
-        
-        setFormData(data);
-        
-        // If form is already submitted, mark API key form as completed
-        if (data.submitted) {
-          setIsApiKeyFormCompleted(true);
+        if (Object.keys(data).length === 0) {
+          setError('Invalid form token or no data received.');
+          setFormData(null);
+        } else {
+          setFormData(data);
+          
+          // If form is already submitted, mark API key form as completed
+          if (data.submitted) {
+            setIsApiKeyFormCompleted(true);
+          }
+          
+          // Clear any previous errors since we got data successfully
+          setError(null);
         }
-        
-        // Clear any previous errors since we got data successfully
-        setError(null);
       } catch (error) {
         console.error('Error loading form data:', error);
         setError('Failed to load form data. Please refresh and try again.');
@@ -79,33 +80,17 @@ const Index = () => {
     }, 500);
   };
   
-  // Debug panel to display the raw API response
-  const DebugPanel = () => (
-    <div className="my-8 p-4 bg-zinc-800 rounded-md">
-      <h3 className="text-xl font-semibold text-white mb-2">Debug Information</h3>
-      <div className="flex flex-wrap gap-4 mb-2">
-        <div className="text-green-400">Form Token: {formToken || 'None'}</div>
-        <div className="text-yellow-400">Form Data Received: {formData ? 'Yes' : 'No'}</div>
-        <div className="text-blue-400">Loading: {isLoading ? 'Yes' : 'No'}</div>
-      </div>
-      <div className="bg-zinc-900 p-3 rounded overflow-auto max-h-60">
-        <pre className="text-xs text-zinc-300">{apiRawResponse || 'No data received'}</pre>
-      </div>
-    </div>
-  );
-  
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
         <img src="https://i.imgur.com/S57GRla.png" alt="Logo" className="h-32 mb-8" />
         <LoadingSpinner size="lg" />
-        <p className="text-zinc-300 mt-6 animate-pulse">Loading form data... (Token: {formToken})</p>
-        <DebugPanel />
+        <p className="text-zinc-300 mt-6 animate-pulse">Loading form data...</p>
       </div>
     );
   }
   
-  if (error && !formData) {
+  if (error) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
         <img src="https://i.imgur.com/S57GRla.png" alt="Logo" className="h-32 mb-8" />
@@ -113,7 +98,19 @@ const Index = () => {
           <h2 className="text-2xl font-semibold mb-4 text-white">Error</h2>
           <p className="text-zinc-300">{error}</p>
         </div>
-        <DebugPanel />
+      </div>
+    );
+  }
+  
+  // Only render the forms if we have valid form data
+  if (!formData) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <img src="https://i.imgur.com/S57GRla.png" alt="Logo" className="h-32 mb-8" />
+        <div className="glass-card p-8 max-w-md text-center">
+          <h2 className="text-2xl font-semibold mb-4 text-white">No Data Available</h2>
+          <p className="text-zinc-300">Unable to load form data. Please verify your form token.</p>
+        </div>
       </div>
     );
   }
@@ -130,8 +127,6 @@ const Index = () => {
             </p>
           )}
         </div>
-        
-        <DebugPanel />
         
         <div className="space-y-16">
           {(!formData?.submitted && !isApiKeyFormCompleted) && (
