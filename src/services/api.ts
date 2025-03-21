@@ -1,7 +1,7 @@
 
 import { toast } from 'sonner';
 
-const API_BASE_URL = 'https://n8n-main-instance-production-1345.up.railway.app/webhook-test';
+const API_BASE_URL = 'https://n8n-main-instance-production-1345.up.railway.app/webhook';
 
 interface PageLoadResponse {
   name?: string;
