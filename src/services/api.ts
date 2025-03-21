@@ -1,7 +1,6 @@
-
 import { toast } from 'sonner';
 
-const API_BASE_URL = 'https://n8n-main-instance-production-1345.up.railway.app/webhook-test';
+const API_BASE_URL = 'https://n8n-main-instance-production-1345.up.railway.app/webhook';
 
 interface PageLoadResponse {
   name?: string;
@@ -42,19 +41,25 @@ interface UserSubmissionPayload {
 
 export const fetchFormData = async (formToken: string): Promise<PageLoadResponse> => {
   try {
+    console.log('Fetching form data with token:', formToken);
     const response = await fetch(`${API_BASE_URL}/pageload`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
       body: JSON.stringify({ formToken }),
     });
 
+    console.log('API Response status:', response.status);
+    
     if (!response.ok) {
       throw new Error(`API call failed: ${response.status}`);
     }
 
-    return await response.json();
+    const data = await response.json();
+    console.log('API Response data:', data);
+    return data;
   } catch (error) {
     console.error('Error fetching form data:', error);
     toast.error('Failed to load form data. Please refresh and try again.');
