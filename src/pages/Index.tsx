@@ -1,11 +1,124 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React, { useState, useEffect, useRef } from 'react';
+import { useUrlParams } from '../hooks/useUrlParams';
+import { fetchFormData } from '../services/api';
+import ApiKeyForm from '../components/ApiKeyForm';
+import UserInvitationForm from '../components/UserInvitationForm';
+import LoadingSpinner from '../components/LoadingSpinner';
+
+interface FormData {
+  name?: string;
+  availableUsers?: number;
+  activeUsers?: number;
+  emails?: string;
+  paymentemail?: string;
+  submitted?: boolean;
+}
 
 const Index = () => {
+  const { formToken = '' } = useUrlParams<{ formToken: string }>();
+  const [formData, setFormData] = useState<FormData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isApiKeyFormCompleted, setIsApiKeyFormCompleted] = useState(false);
+  const userFormRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    const loadFormData = async () => {
+      if (!formToken) {
+        setError('No form token provided. Please check the URL.');
+        setIsLoading(false);
+        return;
+      }
+      
+      try {
+        const data = await fetchFormData(formToken);
+        setFormData(data);
+        
+        // If form is already submitted, mark API key form as completed
+        if (data.submitted) {
+          setIsApiKeyFormCompleted(true);
+        }
+      } catch (error) {
+        console.error('Error loading form data:', error);
+        setError('Failed to load form data. Please refresh and try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadFormData();
+  }, [formToken]);
+  
+  const handleApiKeyFormSuccess = () => {
+    setIsApiKeyFormCompleted(true);
+    
+    // Scroll to user form
+    setTimeout(() => {
+      userFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 500);
+  };
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <img src="https://i.imgur.com/qxrKGVh.png" alt="Logo" className="h-16 mb-8" />
+        <LoadingSpinner size="lg" />
+        <p className="text-zinc-300 mt-6 animate-pulse">Loading form data...</p>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <img src="https://i.imgur.com/qxrKGVh.png" alt="Logo" className="h-16 mb-8" />
+        <div className="glass-card p-8 max-w-md text-center">
+          <h2 className="text-2xl font-semibold mb-4 text-white">Error</h2>
+          <p className="text-zinc-300">{error}</p>
+        </div>
+      </div>
+    );
+  }
+  
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <div className="min-h-screen p-4 sm:p-6 md:p-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-12">
+          <img src="https://i.imgur.com/qxrKGVh.png" alt="Logo" className="h-16 mx-auto mb-8" />
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2 tracking-tight">Welcome to the API Integration Form</h1>
+          {formData?.name && (
+            <p className="text-lg text-zinc-300">
+              Hello, <span className="text-brand font-medium">{formData.name}</span>
+            </p>
+          )}
+        </div>
+        
+        <div className="space-y-16">
+          {(!formData?.submitted && !isApiKeyFormCompleted) && (
+            <div className="form-container animate-fade-in">
+              <ApiKeyForm
+                formToken={formToken}
+                name={formData?.name}
+                paymentEmail={formData?.paymentemail}
+                onSubmitSuccess={handleApiKeyFormSuccess}
+              />
+            </div>
+          )}
+          
+          <div ref={userFormRef} className={`form-container transition-opacity duration-500 ${(!isApiKeyFormCompleted && !formData?.submitted) ? 'opacity-50' : 'opacity-100'}`}>
+            <UserInvitationForm
+              formToken={formToken}
+              availableUsers={formData?.availableUsers}
+              activeUsers={formData?.activeUsers}
+              existingEmails={formData?.emails}
+            />
+          </div>
+          
+          <div className="text-center text-xs text-zinc-500 py-8">
+            &copy; {new Date().getFullYear()} | All rights reserved
+          </div>
+        </div>
       </div>
     </div>
   );
