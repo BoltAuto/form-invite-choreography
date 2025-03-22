@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useUrlParams } from '../hooks/useUrlParams';
 import { fetchFormData } from '../services/api';
@@ -85,7 +86,7 @@ const Index = () => {
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
         <img src={clientConfig.company.logo} alt="Logo" className="h-32 mb-8" />
         <LoadingSpinner size="lg" />
-        <p className="text-zinc-300 mt-6 animate-pulse">Loading form data...</p>
+        <p className="text-zinc-300 mt-6 text-xl animate-pulse">Preparing user...</p>
       </div>
     );
   }
@@ -107,10 +108,8 @@ const Index = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
         <img src={clientConfig.company.logo} alt="Logo" className="h-32 mb-8" />
-        <div className="glass-card p-8 max-w-md text-center">
-          <h2 className="text-2xl font-semibold mb-4 text-white">No Data Available</h2>
-          <p className="text-zinc-300">Unable to load form data. Please verify your form token.</p>
-        </div>
+        <LoadingSpinner size="lg" />
+        <p className="text-zinc-300 mt-6 text-xl animate-pulse">Preparing user...</p>
       </div>
     );
   }
