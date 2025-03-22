@@ -1,5 +1,6 @@
 
 import type { Config } from "tailwindcss";
+import { clientConfig } from "./src/config/clientConfig";
 
 export default {
 	darkMode: ["class"],
@@ -64,10 +65,10 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				brand: {
-					DEFAULT: '#EFB61D',
-					foreground: '#FFFFFF',
-					muted: '#f0c75a',
-					background: '#393939',
+					DEFAULT: clientConfig.colors.primary,
+					foreground: clientConfig.colors.primaryForeground,
+					muted: clientConfig.colors.primaryMuted,
+					background: clientConfig.colors.background,
 				}
 			},
 			borderRadius: {

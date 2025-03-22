@@ -1,7 +1,7 @@
-
 import { toast } from 'sonner';
+import { clientConfig } from '../config/clientConfig';
 
-const API_BASE_URL = 'https://n8n-main-instance-production-1345.up.railway.app/webhook';
+const API_BASE_URL = clientConfig.api.baseUrl;
 
 interface PageLoadResponse {
   name?: string;
@@ -40,8 +40,8 @@ interface UserSubmissionPayload {
   users: User[];
 }
 
-// Longer timeout for API calls (30 seconds)
-const API_TIMEOUT = 30000;
+// Longer timeout for API calls
+const API_TIMEOUT = clientConfig.api.timeout;
 
 // Helper function to create a promise that rejects after a timeout
 const timeoutPromise = (ms: number) => {
